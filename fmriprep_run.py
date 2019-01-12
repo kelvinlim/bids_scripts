@@ -18,6 +18,17 @@ def uniq(input):
       output.append(x)
   return output
 
+def parse_range(astr):
+    """
+    parse_range('0-2, 5, 9-11')
+    Out[163]: [0, 1, 2, 5, 9, 10, 11]
+    """
+
+    result=set()
+    for part in astr.split(','):
+        x=part.split('-')
+        result.update(range(int(x[0]),int(x[-1])+1))
+    return sorted(result)
 
 maindir = os.getcwd()
 bids_dir = os.path.join(maindir, 'BIDS_output') # fullpath for BIDS_output
@@ -36,10 +47,9 @@ parser = argparse.ArgumentParser(description=
   'Script that applies the fmriprep processing pipeline to labels in  dicomlist.py')
 
 # add arguments for beginning and end cases to process
-parser.add_argument('beg',help="first element of label array to start, 0 indexed",
-                    type=int)
-parser.add_argument('end',help="last element of label array to end",
-                    type=int)
+parser.add_argument('range',
+                    help="string like '0-2,5,9-12' specifying index of subjects",
+                    type=str)
 parser.add_argument('--dryrun',help='show cmd but do not run',
                     action='store_true')
 parser.add_argument('--listing',help='list the subjects with index',
@@ -53,11 +63,10 @@ if args.listing==True:
         count += 1
     exit()
 
-# limit the size of labels array based on beg and end arguments
-# for 31 element array, to split in two, 0:16, 16:31
-labels = labels[args.beg:args.end]
+itemlist = parse_range(args.range)
 
-for label in labels:
+for item in itemlist:
+    label = labels[item]
 
     #import pdb; pdb.set_trace()
 

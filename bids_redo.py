@@ -154,7 +154,7 @@ if args.listing==True:
 # for 31 element array, to split in two, 0:16, 16:31
 cases = redolist.cases[args.beg:args.end]
 
-# go through the datasets defined in dicomlist.py
+# go through the datasets defined in redolist.py
 for case in cases:
     info = case[0][2:].split('/')  # drop the initial ./
     sub = info[0] # extract sub

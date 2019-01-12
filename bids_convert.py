@@ -3,9 +3,22 @@
 import argparse
 import os
 import shutil
-import distutils
-
 import sys
+
+# to do
+# add capability to do conversion directly from dicom directory using dm2bids
+
+def parse_range(astr):
+    """
+    parse_range('0-2, 5, 9-11')
+    Out[163]: [0, 1, 2, 5, 9, 10, 11]
+    """
+
+    result=set()
+    for part in astr.split(','):
+        x=part.split('-')
+        result.update(range(int(x[0]),int(x[-1])+1))
+    return sorted(result)
 
 #  add cwd to beginning of path to insure import is from current directory
 sys.path.insert(0, os.getcwd())
@@ -32,10 +45,11 @@ parser = argparse.ArgumentParser(description=
     described in dicomlist.py")
 
 # add arguments for beginning and end cases to process
-parser.add_argument('beg',help="first element of session array to start, 0 indexed",
-                    type=int)
-parser.add_argument('end',help="last element of session array to end",
-                    type=int)
+parser.add_argument('range',
+                    help="string like '0-2,5,9-12' specifying index of sessions",
+                    type=str)
+parser.add_argument('--dcm2bids',help='Use dcm2bids instead of heudiconv',
+                    action='store_true')
 parser.add_argument('--dryrun',help='show cmd but do not run',
                     action='store_true')
 parser.add_argument('--forcecopy',help='force copy of dicom data',
@@ -54,12 +68,11 @@ if args.listing==True:
         count += 1
     exit()
 
-# limit the size of labels array based on beg and end arguments
-# for 31 element array, to split in two, 0:16, 16:31
-datasets = dicomlist.datasets[args.beg:args.end]
-
 # go through the datasets defined in dicomlist.py
-for i in datasets:
+itemlist = parse_range(args.range)
+
+for d in itemlist:
+    i = dicomlist.datasets[d]
     shortpath = i[0]
     subjid = i[1]
     eventid = i[2]
@@ -101,9 +114,19 @@ for i in datasets:
     --heuristic /heuristic.py"%(heuristicspath, tmpdcmdir,
         destdir, container, study_name,  eventid, subjid)
 
+    # dcm2bids -d DICOM_DIR -p PARTICIPANT_ID -s SESSION_ID -c CONFIG_FILE -o BIDS_DIR
+    ## dcm2bids -d DICOM_DIR -p PARTICIPANT_ID -s SESSION_ID -c CONFIG_FILE -o BIDS_DIR
+    cmd3="dcm2bids -d %s -p %s  -s %s -c config.json -o %s --forceDcm2niix --clobber"%(fp_destdir, subjid, eventid, bidsdir)
+    
     print(cmd1)
     print(cmd2)
-
+    print(cmd3)
+    
     if not args.dryrun:
         os.system(cmd1)
-        os.system(cmd2)
+        
+        # check which bids conversion program to use
+        if args.dcm2bids==True:
+            os.system(cmd3)
+        else:
+            os.system(cmd2)
