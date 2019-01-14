@@ -92,18 +92,18 @@ for d in itemlist:
         os.makedirs(fp_destdir)
         # copy the contents of the fp_srcdir
         # distutils.dir_util.copy_tree(fp_srcdir, fp_destdir) #didn't work
-        cmd1 = "cp -rf %s/* %s"%(fp_srcdir, fp_destdir)
+        cmdCopy = "cp -rf %s/* %s"%(fp_srcdir, fp_destdir)
     else:
         if not os.path.exists(fp_destdir):
             os.makedirs(fp_destdir)
             # copy the contents of the fp_srcdir
             # distutils.dir_util.copy_tree(fp_srcdir, fp_destdir) #didn't work
-            cmd1 = "cp -rf %s/* %s"%(fp_srcdir, fp_destdir)
+            cmdCopy = "cp -rf %s/* %s"%(fp_srcdir, fp_destdir)
         else:
-            cmd1 = "echo No copy!"
+            cmdCopy = "echo No copy!"
 
     # cmd to do the conversion
-    cmd2 = "singularity run -B %s:/heuristic.py \
+    cmdSingularity = "singularity run -B %s:/heuristic.py \
     -B %s:/temp_dir \
     -B %s:/output_dir \
     %s \
@@ -114,19 +114,21 @@ for d in itemlist:
     --heuristic /heuristic.py"%(heuristicspath, tmpdcmdir,
         destdir, container, study_name,  eventid, subjid)
 
+    # Create the conversion command using dcm2bids
     # dcm2bids -d DICOM_DIR -p PARTICIPANT_ID -s SESSION_ID -c CONFIG_FILE -o BIDS_DIR
     ## dcm2bids -d DICOM_DIR -p PARTICIPANT_ID -s SESSION_ID -c CONFIG_FILE -o BIDS_DIR
-    cmd3="dcm2bids -d %s -p %s  -s %s -c config.json -o %s --forceDcm2niix --clobber"%(fp_destdir, subjid, eventid, bidsdir)
+    cmdDcm2bids="dcm2bids -d %s -p %s  -s %s -c config.json -o %s --forceDcm2niix --clobber"%(fp_destdir, subjid, eventid, bidsdir)
+       
+    # set conversion command based on flag
+    if args.dcm2bids==False:
+        conversionCmd = cmdSingularity
+    else:
+        conversionCmd = cmdDcm2bids
     
-    print(cmd1)
-    print(cmd2)
-    print(cmd3)
+    print(cmdCopy)
+    print(conversionCmd)
     
     if not args.dryrun:
-        os.system(cmd1)
-        
-        # check which bids conversion program to use
-        if args.dcm2bids==True:
-            os.system(cmd3)
-        else:
-            os.system(cmd2)
+        os.system(cmdCopy)
+        os.system(conversionCmd)
+

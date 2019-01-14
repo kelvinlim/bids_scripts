@@ -6,6 +6,19 @@ import glob
 import fnmatch
 import sys
 
+
+def parse_range(astr):
+    """
+    parse_range('0-2, 5, 9-11')
+    Out[163]: [0, 1, 2, 5, 9, 10, 11]
+    """
+
+    result=set()
+    for part in astr.split(','):
+        x=part.split('-')
+        result.update(range(int(x[0]),int(x[-1])+1))
+    return sorted(result)
+
 def getTaskRun(bidsfilename):
     """
     Get the task and run info from the bids generated filename
@@ -120,10 +133,9 @@ parser = argparse.ArgumentParser(description=
     cases. Uses dicomlist.py and redolist.py. """)
 
 # add arguments for beginning and end cases to process
-parser.add_argument('beg',help="first element of session array to start, 0 indexed",
-                    type=int)
-parser.add_argument('end',help="last element of session array to end",
-                    type=int)
+parser.add_argument('range',
+                    help="string like '0-2,5,9-12' specifying index of subjects",
+                    type=str)
 parser.add_argument('--debug',help='turn python debugger',
                     action='store_true')
 parser.add_argument('--dryrun',help='show cmd but do not run',
@@ -150,12 +162,12 @@ if args.listing==True:
         count += 1
     exit()
 
-# limit the size of labels array based on beg and end arguments
-# for 31 element array, to split in two, 0:16, 16:31
-cases = redolist.cases[args.beg:args.end]
+# list of items to process
+itemlist = parse_range(args.range)
 
 # go through the datasets defined in redolist.py
-for case in cases:
+for item in itemlist:
+    case = redolist.cases[item]
     info = case[0][2:].split('/')  # drop the initial ./
     sub = info[0] # extract sub
     ses = info[1] # extract ses
