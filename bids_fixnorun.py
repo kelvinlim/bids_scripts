@@ -117,20 +117,26 @@ def getNoRunFiles(destdir, file = 'norunlist.txt'):
     """
     read in lines from norunlist file
     """
-    text_file = open( os.path.join(destdir, file), "r")
-    rawlines = text_file.readlines()
-    text_file.close()
-    # remove newline
-    lines = []
-    for line in rawlines:
-        lines.append( line.rstrip())
-    return lines   
-
+    # do file exists check
+    fp = os.path.join(destdir, file)
+    
+    try:
+        with open(file) as fp:
+            # do something with file
+            rawlines = fp.readlines()
+            fp.close()
+            # remove newline
+            lines = []
+            for line in rawlines:
+                lines.append( line.rstrip())
+            return lines   
+    except IOError:
+        print("could not read", file)
+    
 #  add cwd to beginning of path to insure import is from current directory
 sys.path.insert(0, os.getcwd())
 
 import dicomlist
-import redolist
 
 #Paremeters are read from the dicomlist.py file for this study
 srcdir = dicomlist.srcdir
@@ -163,6 +169,8 @@ parser.add_argument('range',
                     type=str)
 parser.add_argument('--debug',help='turn python debugger',
                     action='store_true')
+parser.add_argument('--verbose',help='give more messages during execution',
+                    action='store_true')
 parser.add_argument('--dryrun',help='show cmd but do not run',
                     action='store_true')
 #parser.add_argument('--full',help='use the full list from dicomlist.py',
@@ -188,42 +196,34 @@ if args.listing==True:
 itemlist = parse_range(args.range)
 
 # go through the files defined in norunlist
-for item in norunlist:
+for i in itemlist:
+    item = norunlist[i]
     # get basename and dirname
     basename = os.path.basename(item)
     dirname = os.path.dirname(item)
     fulldir = os.path.join(destdir,dirname) # full directory path
     
+    # get the parts 
+    p = basename.split('.json')[0].split('_')
+    baseWithoutRun = basename.split('.json')[0]
+    baseWithRun = '_'.join(p[0:len(p)-1])
+    baseWithRun += '_run-01_'
+    baseWithRun += p[-1]
     
-    case = redolist.cases[item]
-    info = case[0][2:].split('/')  # drop the initial ./
-    sub = info[0] # extract sub
-    ses = info[1] # extract ses
-    datatype = info[2]  # extract out 'func' or 'anat', etc
-    subDigits = sub.split('-')[1]
-    sesDigits = ses.split('-')[1]
-    filename = info[-1]
+    # loop over suffix to rename
+    for suffix in ['.json','.nii.gz']:
+        srcFullPath = os.path.join(fulldir, baseWithoutRun + suffix )
+        desFullPath = os.path.join(fulldir, baseWithRun + suffix )
+  
+        # check if srcFullPath exists
+        if os.path.exists(srcFullPath):
+            if args.verbose == True:
+                print("File found ", srcFullPath)
+            if not args.dryrun:
+                os.rename(srcFullPath, desFullPath)
+        else:
+            if args.verbose == True:
+                print("File NOT found ", srcFullPath)
+                
 
-    dicomdir = os.path.join(tmpdcmdir, subDigits, sesDigits)
-    replacedir = os.path.join(destdir, 'Replaced')
-
-    # create the replacedir
-    if not os.path.exists(replacedir):
-        os.makedirs(replacedir)
-
-    print(filename)
-    print(sub, ses, subDigits, sesDigits, datatype)
-    print(srcdir, dicomdir, bidsdir)
-    #import pdb; pdb.set_trace()
-
-    
-    # dcm2bids -d DICOM_DIR -p PARTICIPANT_ID -s SESSION_ID -c CONFIG_FILE -o BIDS_DIR
-    ## dcm2bids -d DICOM_DIR -p PARTICIPANT_ID -s SESSION_ID -c CONFIG_FILE -o BIDS_DIR
-    cmd1="dcm2bids -d %s -p %s  -s %s -c config.json -o %s --forceDcm2niix --clobber"%(dicomdir, subDigits, sesDigits, bidsdir)
-    print(cmd1)
-
-    if not args.dryrun:
-        # rm the bad file and the json file
-
-        os.system(cmd1)
 
