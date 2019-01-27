@@ -28,13 +28,13 @@ import dicomlist
 #Paremeters are read from the dicomlist.py file for this study
 srcdir = dicomlist.srcdir
 destdir = dicomlist.destdir
-container = dicomlist.container
+container = dicomlist.container_bids
 study_name = dicomlist.studyname
 
 #===========================================================================
 tmpdcm = 'tmp_dcm'  # temporary dicom directory in destdir
 tmpdcmdir = os.path.join(destdir, tmpdcm)
-bidsdir = os.path.join(destdir, "BIDS_output")
+bidsdir = os.path.join(destdir, "BIDS")
 workdir = os.path.join(destdir, 'Work')
 heuristicspath = os.path.join(destdir, "heuristics.py")
 # get the number of sessions  defined in dicomlist.py

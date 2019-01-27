@@ -147,7 +147,7 @@ study_name = dicomlist.studyname
 #===========================================================================
 tmpdcm = 'tmp_dcm'  # temporary dicom directory in destdir
 tmpdcmdir = os.path.join(destdir, tmpdcm)
-bidsdir = os.path.join(destdir, "BIDS_output")
+bidsdir = os.path.join(destdir, "BIDS")
 workdir = os.path.join(destdir, 'Work')
 
 parser = argparse.ArgumentParser(description=

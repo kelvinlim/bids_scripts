@@ -3,8 +3,6 @@
 from __future__ import print_function
 import argparse
 import os
-import shutil
-import distutils
 import sys
 
 #  add cwd to beginning of path to insure import is from current directory
@@ -31,9 +29,11 @@ def parse_range(astr):
     return sorted(result)
 
 maindir = os.getcwd()
-bids_dir = os.path.join(maindir, 'BIDS_output') # fullpath for BIDS_output
-fmriprep_dir = os.path.join(maindir, 'fmriprep_output') # fullpath for fmriprep
-container = '/home/share/Containers/fmriprep-1.2.5.simg'
+bids_dir = os.path.join(maindir, 'BIDS') # fullpath for BIDS_output
+fmriprep_dir = os.path.join(maindir, 'Derivs') # fullpath for output
+#container = '/home/share/Containers/fmriprep-1.2.5.simg'
+container = dicomlist.container_fmriprep
+
 
 # get the participant labels  defined in dicomlist.py
 tmplist = []
@@ -44,7 +44,7 @@ labels = uniq(tmplist)  # remove duplicate labels
 print('number of subjects ',len(labels))
 
 parser = argparse.ArgumentParser(description=
-  'Script that applies the fmriprep processing pipeline to labels in  dicomlist.py')
+  'Runs the fmriprep processing pipeline to labels in  dicomlist.py')
 
 # add arguments for beginning and end cases to process
 parser.add_argument('range',
