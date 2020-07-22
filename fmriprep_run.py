@@ -29,7 +29,7 @@ def parse_range(astr):
     return sorted(result)
 
 maindir = os.getcwd()
-bids_dir = os.path.join(maindir, 'BIDS') # fullpath for BIDS_output
+bids_dir = os.path.join(maindir, 'BIDS_output') # fullpath for BIDS_output
 fmriprep_dir = os.path.join(maindir, 'Derivs') # fullpath for output
 #container = '/home/share/Containers/fmriprep-1.2.5.simg'
 container = dicomlist.container_fmriprep
@@ -56,18 +56,27 @@ parser.add_argument('--listing',help='list the subjects with index',
                     action='store_true')
 args = parser.parse_args()
 
+
 if args.listing==True:
     count = 0
-    for label in labels:
-        print(count, label)
+    for i in dicomlist.datasets:
+        shortpath = i[0]
+        subjid = i[1]
+        eventid = i[2]
+        print(count, subjid,eventid, shortpath)
         count += 1
     exit()
 
+
+# items to process
 itemlist = parse_range(args.range)
 
 for item in itemlist:
-    label = labels[item]
-
+    print('Item:',item)
+    print('Number of Sessions: ', len(dicomlist.datasets))
+    subjid = dicomlist.datasets[item][1] 
+    sessid = dicomlist.datasets[item][2]
+    
     #import pdb; pdb.set_trace()
 
     # sample command
@@ -80,14 +89,21 @@ for item in itemlist:
     --use-syn-sdc
     """
 
+    # session_id is not a valid argument even for most recent
+    # container  fmriprep 20.1.1
+    # --session_id 
     cmd = "singularity run -B %s:/work -B %s:/output \
     -B %s:/main \
     %s /work /output participant \
     --participant_label %s\
     --fs-license-file /main/license.txt \
     --use-aroma \
+    --ignore slicetiming \
+    --cifti-output \
+    --skip-bids-validation \
     -w /main/Work \
-    --use-syn-sdc"%(bids_dir, fmriprep_dir, maindir, container, label)
+    --use-syn-sdc"%(bids_dir, fmriprep_dir, maindir, container, 
+        subjid)
 
     if args.dryrun:
       print(cmd)
